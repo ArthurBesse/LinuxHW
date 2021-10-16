@@ -19,7 +19,7 @@
         int errno_backup = errno_backup; \
         fprintf(stderr, "%s", msg); \
         fprintf(stderr, "file: %s, line: %d\n", __FILE__, __LINE__); \
-        perror(strerror(errno_backup)); \
+        fprintf(stderr, "%s\n", strerror(errno_backup)); \
 }
 
 
@@ -29,7 +29,7 @@ int del(char const * fpath, const struct stat * sb, int typeflag, struct FTW * f
         {
                 int errno_copy = errno;
                 fprintf(stderr, "%s%s%s", "Error occured while deleting the file: ", fpath, "\n");
-                perror(strerror(errno_copy));
+                fprintf(stderr, "%s\n", strerror(errno_copy));
                 return FTW_SKIP_SUBTREE;
         }
 
