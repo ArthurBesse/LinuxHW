@@ -17,7 +17,7 @@
         int errno_backup = errno_backup; \
         fprintf(stderr, "%s", msg); \
         fprintf(stderr, "file: %s, line: %d\n", __FILE__, __LINE__); \
-        perror(strerror(errno_backup)); \
+	fprintf(stderr, "%s", strerror(errno_backup)); \
 }
 
 
@@ -43,8 +43,8 @@ int main(int argc, char** argv)
 	if (S_IFDIR == (sb1.st_mode  & S_IFMT))
 	{
 		perror("Currently recursive copy not supported. Source should not be directory.");
-		return -1;
-		//              exit(EXIT_FAILURE);
+		fprintf(stderr, "Currently recursive copy not supported. Source should not be directory.");
+		exit(EXIT_FAILURE);
 	}
 
 	struct stat sb2;
