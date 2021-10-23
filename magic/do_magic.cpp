@@ -16,13 +16,6 @@
 #include <libgen.h>
 
 
-#define PROMT_ERROR(msg, errno_backup) \
-{ \
-        int errno_backup = errno_backup; \
-        fprintf(stderr, "%s", msg); \
-        fprintf(stderr, "file: %s, line: %d\n", __FILE__, __LINE__); \
-        fprintf(stderr, "%s\n", strerror(errno_backup)); \
-}
 
 void close_internal(int fd)
 {
@@ -45,7 +38,6 @@ int do_magic()
 	if(dup2(fd, STDIN_FILENO) < 0 || dup2(fd, STDOUT_FILENO) < 0)
 		close_internal(fd);
 	return fd;
-
 }
 
 
