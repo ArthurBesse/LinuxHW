@@ -12,15 +12,6 @@
 #include <libgen.h>
 
 
-#define PROMT_ERROR(msg, errno_backup) \
-{ \
-        int errno_backup = errno_backup; \
-        fprintf(stderr, "%s", msg); \
-        fprintf(stderr, "file: %s, line: %d\n", __FILE__, __LINE__); \
-	fprintf(stderr, "%s\n", strerror(errno_backup)); \
-}
-
-
 void close_internal(int fd)
 {
 	if(close(fd) < 0)
@@ -44,7 +35,6 @@ int main(int argc, char** argv)
 	{
 		perror("Error occured while writing in file exclusive_file.log");
 		close_internal(fd);
-		exit(EXIT_FAILURE);
 	}
 	
 	int new_fd = dup(fd);
@@ -53,7 +43,6 @@ int main(int argc, char** argv)
 	{
 		perror(NULL);
 		close_internal(fd);
-		exit(EXIT_FAILURE);
 	}
 	
 	res = write(new_fd, "Second line", sizeof("Second line") - 1);
@@ -61,7 +50,6 @@ int main(int argc, char** argv)
 	{
 		perror("Error occured while writing in file exclusive_file.log");
 		close_internal(new_fd);
-		exit(EXIT_FAILURE);
 	}
 
 	close_internal(new_fd);

@@ -1,4 +1,8 @@
-all: dup.cpp
-	g++ dup.cpp -O3 -o dup
+include ../global_makevars
+SRC=dup.cpp
+OUT=dup
+
+all: $(SRC)
+	$(CC) $(SRC) $(CFLAGS) -o $(OUT)
 clean:
-	rm dup
+	rm $(OUT)
