@@ -1,4 +1,8 @@
-all: rm.cpp
-	g++ rm.cpp -O3 -o rm
+include ../global_makevars
+SRC=rm.cpp
+OUT=rm
+
+all: $(SRC)
+	$(CC) $(SRC) $(CFLAGS) -o $(OUT)
 clean: 
-	rm rm
+	rm $(OUT)
