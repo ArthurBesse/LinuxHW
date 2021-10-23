@@ -1,5 +1,5 @@
-#include "do_magic.h"
 
+#include "do_magic.h"
 
 
 int main(int argc, char** argv)
@@ -9,3 +9,4 @@ int main(int argc, char** argv)
 	std::cin >> s;
 	std::cout << s;
 }
+
