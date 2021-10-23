@@ -1,4 +1,8 @@
-all: do_magic.cpp
-	g++ do_magic.cpp -O3 -o do_magic
+include ../global_makevars
+SRC=do_magic.cpp
+OUT=do_magic
+
+all: $(SRC)
+	$(CC) $(SRC) $(CFLAGS) -o $(OUT)
 clean:
-	rm do_magic
+	rm $(OUT)
