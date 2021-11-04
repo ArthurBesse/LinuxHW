@@ -24,7 +24,8 @@ int main (int argc, char ** argv)
 		exit(EXIT_FAILURE);
 	} 
 
-	char * args[] = { argv[1], (char*)NULL };
+	char * args[] = { argv[1], (char*)NULL }; //Удивительный факт: если не написать NULL в конце и запускать под Windows 
+						  //то Windows падает с синим экраном :)
 	if(0 > execv("./b", args))
 	{
 		perror("Error occurred while calling b");
