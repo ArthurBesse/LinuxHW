@@ -35,11 +35,13 @@ int main (int argc, char ** argv)
 		perror(NULL);
 		exit(EXIT_FAILURE);
 	}
-
-	if(0 == pid && 0 > execv("./b", args))
+	if(0 == pid)
 	{
-		perror("Error occurred while calling b");
-		exit(EXIT_FAILURE);
+		if(0 > execv("./b", args))
+		{
+			perror("Error occurred while calling b");
+			exit(EXIT_FAILURE);
+		}
 	}
 	else
 		wait(NULL);
