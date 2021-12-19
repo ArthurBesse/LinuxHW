@@ -47,8 +47,12 @@ int main(int argc, char** argv)
             perror(NULL);
             exit(EXIT_FAILURE);
         }
+        for(int i = 0; i < v.size() + 2; i++)
+                delete[] arg_list[i];
+        delete[] arg_list;
     }
     else
         wait(NULL);
-    exit(EXIT_SUCCESS);
+
+	 exit(EXIT_SUCCESS);
 }
