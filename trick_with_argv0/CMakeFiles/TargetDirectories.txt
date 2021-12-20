@@ -1,0 +1,4 @@
+/home/user/University/LinuxHW/trick_with_argv0/CMakeFiles/rebuild_cache.dir
+/home/user/University/LinuxHW/trick_with_argv0/CMakeFiles/edit_cache.dir
+/home/user/University/LinuxHW/trick_with_argv0/CMakeFiles/b.dir
+/home/user/University/LinuxHW/trick_with_argv0/CMakeFiles/a.dir

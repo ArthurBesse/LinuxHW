@@ -1,0 +1,1 @@
+/usr/bin/c++ CMakeFiles/rm.dir/rm.cpp.o -o rm 

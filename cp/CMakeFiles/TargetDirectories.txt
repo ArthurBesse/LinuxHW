@@ -1,0 +1,3 @@
+/home/user/University/LinuxHW/cp/CMakeFiles/rebuild_cache.dir
+/home/user/University/LinuxHW/cp/CMakeFiles/edit_cache.dir
+/home/user/University/LinuxHW/cp/CMakeFiles/cp.dir

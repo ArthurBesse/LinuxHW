@@ -1,0 +1,3 @@
+/home/user/University/LinuxHW/magic/CMakeFiles/rebuild_cache.dir
+/home/user/University/LinuxHW/magic/CMakeFiles/edit_cache.dir
+/home/user/University/LinuxHW/magic/CMakeFiles/do_magic.dir

@@ -1,0 +1,3 @@
+/home/user/University/LinuxHW/xargs/CMakeFiles/rebuild_cache.dir
+/home/user/University/LinuxHW/xargs/CMakeFiles/edit_cache.dir
+/home/user/University/LinuxHW/xargs/CMakeFiles/xargs.dir
