@@ -56,7 +56,7 @@ private:
                 case ERROR:
                         return "ERROR";
                         break;                
-				case FATAL:
+		case FATAL:
                         return "FATAL";
                         break;
                 case DEBUG:
