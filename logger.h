@@ -1,3 +1,4 @@
+#include <thread>
 #include <iomanip>
 #include <ctime>
 #include <iostream>
@@ -161,9 +162,9 @@ private:
                 std::time_t cur_time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
                 std::tm * cur_time_local = std::localtime(&cur_time);
                 if(true == show_source)
-                        out << std::put_time(cur_time_local, "%Y%m%d%H%M%S") << " " << get_severity_str(severity) << ": " << this->format(fmt, std::forward<T>(args)...) << " (FROM: " << FILE << ":" << LINE << ")" << std::endl;
+                        out << std::put_time(cur_time_local, "%Y%m%d%H%M%S") << " [" << std::this_thread::get_id() << "] " << get_severity_str(severity) << ": " << this->format(fmt, std::forward<T>(args)...) << " (FROM: " << FILE << ":" << LINE << ")" << std::endl;
                 else
-                        out << std::put_time(cur_time_local, "%Y%m%d%H%M%S") << " " << get_severity_str(severity) << ": " << this->format(fmt, std::forward<T>(args)...) << std::endl;
+                        out << std::put_time(cur_time_local, "%Y%m%d%H%M%S") << " [" << std::this_thread::get_id() << "] " << get_severity_str(severity) << ": " << this->format(fmt, std::forward<T>(args)...) << std::endl;
         }
 
         template<typename ... Args>
