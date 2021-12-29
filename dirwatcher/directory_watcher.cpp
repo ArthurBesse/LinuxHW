@@ -1,4 +1,4 @@
-
+#include <chrono>
 #include <thread>
 #include <atomic>
 #include <string.h>
@@ -133,6 +133,7 @@ private:
     {
         while (false == stop_flag.load(std::memory_order_relaxed))
         {
+	    using namespace std::chrono_literals;
             int i = 0, length;
             char buffer[buf_len];
 
@@ -162,6 +163,7 @@ private:
                     callback->log(action, file, event->name);
                 }
                 i += event_size + event->len;
+		std::this_thread::sleep_for(50ms);
             }
         }
     }
