@@ -22,18 +22,18 @@ int main(int argc, char const ** argv)
 	int pid = fork();
 	if(0 > pid)
 	{
-		perror(NULL);
+		perror(nullptr);
 		exit(EXIT_FAILURE);
 	}
 	if(0 == pid)
 	{
-		if(0 > execlp("ls", "-a", "-l", (char*)NULL))
+		if(0 > execlp("ls", "-a", "-l", (char*)nullptr))
 		{
-			perror(NULL);
+			perror(nullptr);
 			exit(EXIT_FAILURE);
 		}
 	}
 	else
-		wait(NULL);
+		wait(nullptr);
 	exit(EXIT_SUCCESS);
 }
