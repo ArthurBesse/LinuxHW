@@ -11,6 +11,7 @@
 class Logger
 {
 public:
+	
 enum severity_t { INFO, WARNING, ERROR, FATAL, DEBUG };
 
 private:
