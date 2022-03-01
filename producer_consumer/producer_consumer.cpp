@@ -1,12 +1,65 @@
 #include <iostream>
 #include <thread>
 #include <mutex>
+#include <random>
 #include <atomic>
 #include <functional>
 #include <string>
 #include <queue>
 #include <condition_variable>
 #include <logger.h>
+
+namespace rnd
+{
+
+template<class T>
+class RandomGenerator;
+
+template<>
+class RandomGenerator<int>
+{
+	std::random_device m_device;
+	std::mt19937 m_random;
+	std::uniform_int_distribution<std::mt19937::result_type> m_distribution;
+public:
+	RandomGenerator(int left, int right)
+		: m_device()
+		, m_random(m_device())
+		, m_distribution(left, right)
+	{
+	}
+
+	int generate() 
+	{
+		return m_distribution(m_random);
+	}
+
+};
+
+template<>
+class RandomGenerator<std::string>
+{
+	std::size_t m_lenght;
+	RandomGenerator<int> m_generator;
+
+public:
+        RandomGenerator(std::size_t lenght)
+                : m_lenght(lenght)
+                , m_generator('a', 'z')
+        {
+        }
+
+        std::string generate()
+        {
+		std::string res(m_lenght, '*');
+		for(auto& c : res)
+			c = this->m_generator.generate();
+                return res;
+        }
+
+};
+
+};
 
 template <class T>
 struct QueueWrapper
@@ -29,14 +82,13 @@ class Producer final
 	std::unique_ptr<std::thread> m_runner;
 	std::function<T()> m_generator;
 	std::atomic<bool> m_stop_requested;
-	bool stopped;
-	std::mutex m_mutex;
+	bool m_stopped;
 public:
 	Producer(QueueWrapper<T>& q, std::function<T()> generator)
 		: m_queue(q)
 		, m_generator(generator)
 		, m_stop_requested(false)
-		, stopped(false)
+		, m_stopped(false)
 	{
 	}
 
@@ -68,7 +120,7 @@ public:
 	}
 	void stop(void)
 	{
-		if(true == this->stopped) return;
+		if(true == this->m_stopped) return;
 
 		Logger::logf(Logger::INFO, __FILE__, __LINE__, "Shuting down producer...");
 		this->m_stop_requested = true;
@@ -76,7 +128,7 @@ public:
 		if (this->m_runner && m_runner->joinable())
 			this->m_runner->join();
 		Logger::logf(Logger::INFO, __FILE__, __LINE__, "Producer has been shut down");
-		this->stopped = true;
+		this->m_stopped = true;
 	}
 	~Producer(void)
 	{
@@ -111,13 +163,13 @@ class Consumer final
 	std::unique_ptr<std::thread> m_runner;
 	std::function<void(T const&)> m_callback;
 	std::atomic<bool> m_stop_requested;
-	bool stopped;
+	bool m_stopped;
 public:
 	Consumer(QueueWrapper<T>& q, std::function<void(T const&)> callback)
 		: m_queue(q)
 		, m_callback(callback)
 		, m_stop_requested(false)
-		, stopped(false)
+		, m_stopped(false)
 	{
 	}
 
@@ -149,7 +201,7 @@ public:
 	}
 	void stop(void)
 	{
-		if(true == this->stopped) return;
+		if(true == this->m_stopped) return;
 
 		Logger::logf(Logger::INFO, __FILE__, __LINE__, "Shuting down consumer...");
                 this->m_stop_requested = true;
@@ -157,7 +209,7 @@ public:
                 if (this->m_runner && m_runner->joinable())
                         this->m_runner->join();
                 Logger::logf(Logger::INFO, __FILE__, __LINE__, "Consumer has been shut down");
-		this->stopped = true;
+		this->m_stopped = true;
 	}
 	~Consumer(void)
 	{
@@ -187,21 +239,24 @@ private:
 };
 
 using ItemType = std::string;
+#define ITEM_TYPE_FORMAT "%s"
 
 int main(int argc, char const** argv)
 {
-	Logger logger(nullptr);
-	QueueWrapper<ItemType> qw(1000);
-	Producer<ItemType> p(qw, []()
+	Logger logger(nullptr, true, false);
+	QueueWrapper<ItemType> qw(100);
+	rnd::RandomGenerator<ItemType> rg(13);
+
+	Producer<ItemType> p(qw, [&rg] () mutable
 		{
-			return "abacaba";
+			return rg.generate();
 		});
 
-	Consumer<ItemType> c(qw, [](ItemType const& val) { std::cout << val << std::endl; });
+	Consumer<ItemType> c(qw, [](ItemType const& val) { Logger::logf(Logger::INFO, __FILE__, __LINE__, "Consumer received: " ITEM_TYPE_FORMAT, val.c_str()); });
 
-	p.start();
 	c.start();
-	std::this_thread::sleep_for(std::chrono::milliseconds(3));
+	p.start();
+	std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	p.stop();
 	c.stop();
 	return 0;
