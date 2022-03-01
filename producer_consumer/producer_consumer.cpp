@@ -142,6 +142,7 @@ private:
 		{
 			while (this->m_queue.m_capacity > this->m_queue.m_queue.size())
 			{
+				std::lock_guard<std::mutex> lg(this->m_queue.m_mutex);
 				this->m_queue.m_queue.push(m_generator());
 				this->m_queue.m_cv.notify_one();
 				if (true == this->m_stop_requested.load(std::memory_order_consume))
@@ -224,7 +225,7 @@ private:
 		{
 			while (this->m_queue.m_queue.size() > 0)
 			{
-				//std::this_thread::sleep_for(1000ms);
+				std::lock_guard<std::mutex> lg(this->m_queue.m_mutex);
 				this->m_callback(this->m_queue.m_queue.front());
 				this->m_queue.m_queue.pop();	
 				this->m_queue.m_cv.notify_one();
