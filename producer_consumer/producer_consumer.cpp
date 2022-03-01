@@ -82,13 +82,13 @@ class Producer final
 	std::unique_ptr<std::thread> m_runner;
 	std::function<T()> m_generator;
 	std::atomic<bool> m_stop_requested;
-	bool m_stopped;
+	std::atomic<bool> m_stopped;
 public:
 	Producer(QueueWrapper<T>& q, std::function<T()> generator)
 		: m_queue(q)
 		, m_generator(generator)
 		, m_stop_requested(false)
-		, m_stopped(false)
+		, m_stopped(true)
 	{
 	}
 
@@ -105,6 +105,7 @@ public:
 		Logger::logf(Logger::INFO, __FILE__, __LINE__, "Starting producer...");
 		try
 		{
+			m_stopped = false;
 			m_runner.reset(new std::thread(&Producer<T>::start_internal, this));
 		}
 		catch (const std::exception& e)
@@ -163,13 +164,13 @@ class Consumer final
 	std::unique_ptr<std::thread> m_runner;
 	std::function<void(T const&)> m_callback;
 	std::atomic<bool> m_stop_requested;
-	bool m_stopped;
+	std::atomic<bool> m_stopped;
 public:
 	Consumer(QueueWrapper<T>& q, std::function<void(T const&)> callback)
 		: m_queue(q)
 		, m_callback(callback)
 		, m_stop_requested(false)
-		, m_stopped(false)
+		, m_stopped(true)
 	{
 	}
 
@@ -186,6 +187,7 @@ public:
 		Logger::logf(Logger::INFO, __FILE__, __LINE__, "Starting consumer...");
                 try
                 {
+			m_stopped = false;
                         m_runner.reset(new std::thread(&Consumer<T>::start_internal, this));
                 }
                 catch (const std::exception& e)
@@ -245,19 +247,16 @@ int main(int argc, char const** argv)
 {
 	Logger logger(nullptr, true, false);
 	QueueWrapper<ItemType> qw(100);
-	rnd::RandomGenerator<ItemType> rg(13);
 
-	Producer<ItemType> p(qw, [&rg] () mutable
-		{
-			return rg.generate();
-		});
 
+	rnd::RandomGenerator<ItemType> rg(10);
 	Consumer<ItemType> c(qw, [](ItemType const& val) { Logger::logf(Logger::INFO, __FILE__, __LINE__, "Consumer received: " ITEM_TYPE_FORMAT, val.c_str()); });
+	Producer<ItemType> p(qw, [&rg] () { return rg.generate(); });
 
-	c.start();
-	p.start();
-	std::this_thread::sleep_for(std::chrono::milliseconds(1));
-	p.stop();
-	c.stop();
+        c.start();
+        p.start();
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+	//p.stop();
+	//c.stop();
 	return 0;
 }
