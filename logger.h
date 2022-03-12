@@ -6,7 +6,7 @@
 #include <chrono>
 #include <fstream>
 #include <mutex> 
-
+#pragma GCC diagnostic ignored "-Wformat-security"
 
 class Logger
 {
