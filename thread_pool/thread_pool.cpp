@@ -208,7 +208,7 @@ int main(int argc, char** argv)
 {
 	Logger logger(nullptr, true, false);
 	using namespace std::chrono_literals;
-	ThreadPool tp(4);
+	ThreadPool tp(5);
 	tp.start();
 	int x, y;
 	std::cin >> x >> y;
@@ -239,10 +239,6 @@ int main(int argc, char** argv)
 			Logger::logf(Logger::INFO, __FILE__, __LINE__, "%d / %d \t=\t%d", x, y, future_div->get());
 			Logger::logf(Logger::INFO, __FILE__, __LINE__, "%d - %d \t=\t%d", x, y, future_sub->get());
 			Logger::logf(Logger::INFO, __FILE__, __LINE__, "%d + %d \t=\t%d", x, y, future_sum->get());
-//			std::cout << x << " * " << y << "\t=\t" << future_mul->get() << std::endl;
-//			std::cout << x << " / " << y << "\t=\t" << future_div->get() << std::endl;
-//			std::cout << x << " - " << y << "\t=\t" << future_sub->get() << std::endl;
-//			std::cout << x << " + " << y << "\t=\t" << future_sum->get() << std::endl;
 		}
 		catch (std::exception const& e)
 		{
