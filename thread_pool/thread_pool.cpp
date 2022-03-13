@@ -142,18 +142,20 @@ private:
 					while (false == this->m_stop_requested.load())
 					{
 						Task task;
-						std::unique_lock<std::mutex> ul(m_mutex);
-						m_cv.wait(ul, 
-							[this, &task] () 
-							{ 
-								if (m_stop_requested)
-									return true;
-								if (m_queue.size())
-									return task = m_queue.top(), m_queue.pop(), true;
-								return false;
-							}
-						);
-						ul.unlock();
+						{
+							std::unique_lock<std::mutex> ul(m_mutex);
+							m_cv.wait(ul, 
+								[this, &task] () 
+								{ 
+									if (m_stop_requested)
+										return true;
+									if (m_queue.size())
+										return task = m_queue.top(), m_queue.pop(), true;
+									return false;
+								}
+
+							);
+						}
 						task();
 					}
 				});
