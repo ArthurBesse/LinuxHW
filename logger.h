@@ -3,6 +3,7 @@
 #include <ctime>
 #include <iostream>
 #include <sstream>
+#include <syncstream>
 #include <chrono>
 #include <fstream>
 #include <mutex> 
@@ -16,62 +17,14 @@ enum severity_t { INFO, WARNING, ERROR, FATAL, DEBUG };
 
 private:
 
-        static inline Logger* this_ptr = NULL;
+        static inline Logger* this_ptr = nullptr;
         std::ofstream outf;
         std::ostream& out;
-	std::mutex mtx;
-	bool debug;
-	bool show_source;
-	bool colored;
+	bool const debug;
+	bool const show_source;
+	bool const colored;
 
 
-	class Color
-	{
-		enum Code {
-	        FG_RED      = 31,
-        	FG_GREEN    = 32,
-	        FG_BLUE     = 34,
-	        FG_DEFAULT  = 39,
-        	BG_RED      = 41,
-	        BG_GREEN    = 42,
-        	BG_BLUE     = 44,
-	        BG_DEFAULT  = 49 };
-		std::ostream& out;
-		Code code;
-	public:
-	        Color(std::ostream& os, Logger::severity_t severity)
-			: out(os)
-		{
-			switch(severity)
-			{
-			case Logger::ERROR:
-				out << "\033[" << FG_RED << "m";
-				break;
-			case Logger::WARNING:
-				out << "\033[" << FG_GREEN << "m";
-				break;
-			case Logger::DEBUG:
-				out << "\033[" << FG_BLUE << "m";
-				break;
-			default:
-				out << "\033[" << FG_DEFAULT << "m";
-			}
-		}
-
-		~Color(void)
-		{
-			out << "\033[" << FG_DEFAULT << "m";
-		}
-
-		Color(const Color&) = delete;
-
-		Color& operator=(const Color&) = delete;
-
-		Color(Color&&) = delete;
-
-		Color& operator=(Color&&) = delete;
-
-	};
 public:
         Logger(char const * filename, bool debug_param = true, bool show_source_param = true, bool colored_param = true)
                 : outf(filename)
@@ -90,7 +43,7 @@ public:
         {
 		out << std::flush;
                 outf.close();
-                this_ptr = NULL;
+                this_ptr = nullptr;
         }
 
 	Logger(const Logger&) = delete;
@@ -141,31 +94,30 @@ private:
                 return nullptr;
         }
 
-        template<typename ...T>
+	char const * get_severity_color_str(Logger::severity_t severity) const
+	{
+		switch(severity)
+                {
+                case Logger::ERROR:
+			return "\033[31m";
+		case Logger::WARNING:
+			return "\033[32m";
+                case Logger::DEBUG:
+                        return "\033[34m";
+                default:
+                        return "\033[39m";
+                }
+	}
+
+	template<typename ...T>
         void logf_internal(Logger::severity_t severity, const char * FILE, size_t LINE, char const * fmt, T&& ... args)
         {
-		std::lock_guard<std::mutex> lck(mtx);
-		if(true == colored)
-		{
-			Color color(out, severity);
-			this->logf_impl(severity, FILE, LINE, fmt, std::forward<T>(args)...);
-			return;
-		}
-
-		this->logf_impl(severity, FILE, LINE, fmt, std::forward<T>(args)...);
-        }
-
-	//NOTE: this method is not thread safe and should be called only from logf_internal.
-	template<typename ...T>
-        void logf_impl(Logger::severity_t severity, const char * FILE, size_t LINE, char const * fmt, T&& ... args)
-        {
-
                 std::time_t cur_time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
                 std::tm * cur_time_local = std::localtime(&cur_time);
                 if(true == show_source)
-                        out << std::put_time(cur_time_local, "%Y%m%d%H%M%S") << " [" << std::this_thread::get_id() << "] " << get_severity_str(severity) << ": " << this->format(fmt, std::forward<T>(args)...) << " (FROM: " << FILE << ":" << LINE << ")" << std::endl;
+                        std::osyncstream(out) << get_severity_color_str(severity) << std::put_time(cur_time_local, "%Y%m%d%H%M%S") << " [" << std::this_thread::get_id() << "] " << get_severity_str(severity) << ": " << this->format(fmt, std::forward<T>(args)...) << " (FROM: " << FILE << ":" << LINE << ")" << get_severity_color_str(Logger::severity_t::INFO) << std::endl;
                 else
-                        out << std::put_time(cur_time_local, "%Y%m%d%H%M%S") << " [" << std::this_thread::get_id() << "] " << get_severity_str(severity) << ": " << this->format(fmt, std::forward<T>(args)...) << std::endl;
+                        std::osyncstream(out) << get_severity_color_str(severity) << std::put_time(cur_time_local, "%Y%m%d%H%M%S") << " [" << std::this_thread::get_id() << "] " << get_severity_str(severity) << ": " << this->format(fmt, std::forward<T>(args)...) << get_severity_color_str(Logger::severity_t::INFO) << std::endl;
         }
 
         template<typename ... Args>
