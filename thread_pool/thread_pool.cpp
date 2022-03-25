@@ -12,6 +12,9 @@
 #include <condition_variable>
 #include <logger.h>
 
+/*
+ * There are some issues with reference parameters. If you want to review this code please wait while I fix these issues.
+ */
 
 class ThreadPool final
 {
