@@ -17,7 +17,7 @@ class ThreadPool final
 {
 
 public:
-	enum class priority_t { LOW, MINOR, HIGH, CRITICAL };
+	enum class priority_t { MINOR, LOW, MEDIUM, HIGH, CRITICAL };
 
 	ThreadPool(std::size_t capacity)
 		: m_capacity(capacity)
@@ -40,7 +40,7 @@ public:
 
 	template<class T, class ...Args>
 	std::optional<std::future<typename std::function<T(Args...)>::result_type>> 
-		prepare_task(std::function<T(Args...)> task, priority_t priority, Args const& ... args)
+		prepare_task(std::function<T(Args...)> task, priority_t priority, Args const&... args)
 	{
 		if constexpr (false == std::is_void<T>::value)
 		{
@@ -50,7 +50,7 @@ public:
 
 			this->prepare_task_internal
 			(
-				[task, promise, args...]()
+				[task, promise, &args...]()
 				{
 					try
 					{
@@ -73,7 +73,7 @@ public:
 		{
 			this->prepare_task_internal
 			(
-				[task, args...]()
+				[task, &args...]()
 				{
 					try
 					{
@@ -88,6 +88,57 @@ public:
 			return std::nullopt;
 		}
 	}
+
+        template<class T, class ...Args>
+        std::optional<std::future<typename std::function<T(Args...)>::result_type>>
+                prepare_task(std::function<T(Args...)> task, priority_t priority, Args &&... args)
+        {
+                if constexpr (false == std::is_void<T>::value)
+                {
+                        using RetType = typename decltype(task)::result_type;
+                        auto promise = std::make_shared<std::promise<RetType> >();
+                        std::future<RetType> future = promise->get_future();
+
+                        this->prepare_task_internal
+                        (
+                                [task, promise, args...]()
+                                {
+                                        try
+                                        {
+                                                promise->set_value(task(args...));
+                                        }
+                                        catch (std::exception const& e)
+                                        {
+                                                try{ promise->set_exception(std::current_exception()); }
+                                                catch (...)
+                                                {
+                                                        Logger::logf(Logger::ERROR, __FILE__, __LINE__, "%s", e.what());
+                                                }
+                                        }
+
+                                }, priority
+                        );
+                        return future;
+                }
+                else
+                {
+                        this->prepare_task_internal
+                        (
+                                [task, args...]()
+                                {
+                                        try
+                                        {
+                                                task(args...);
+                                        }
+                                        catch (const std::exception& e)
+                                        {
+                                                Logger::logf(Logger::ERROR, __FILE__, __LINE__, "%s", e.what());
+                                        }
+                                }, priority
+                        );
+                        return std::nullopt;
+                }
+        }
 
 	void start(void)
 	{
@@ -258,7 +309,12 @@ int main(int argc, char** argv)
 
 	/*============== TEST WITHOUT RETURN TYPE ==============*/
 	{
+
 		Logger::logf(Logger::INFO, __FILE__, __LINE__, "Tests without return type started");
+		std::function<void(std::reference_wrapper<int>, std::reference_wrapper<int>)> fchg = [](std::reference_wrapper<int> x, std::reference_wrapper<int> y) {
+			x.get() <<= 1;
+			y.get() <<= 1;
+		};
 		std::function<void(int, int)> fmul = [](int x, int y) {
 			Logger::logf(Logger::INFO, __FILE__, __LINE__, "%d * %d \t=\t%d", x, y, x * y);
 		};
@@ -272,10 +328,11 @@ int main(int argc, char** argv)
 			Logger::logf(Logger::INFO, __FILE__, __LINE__, "%d + %d \t=\t%d", x, y, x + y);
 		};
 
-		auto future_mul = tp.prepare_task(fmul, ThreadPool::priority_t::CRITICAL, x, y);
-		auto future_div = tp.prepare_task(fdiv, ThreadPool::priority_t::HIGH, x, y);
-		auto future_sub = tp.prepare_task(fsub, ThreadPool::priority_t::MINOR, x, y);
-		auto future_sum = tp.prepare_task(fsum, ThreadPool::priority_t::LOW, x, y);
+		auto future_chg = tp.prepare_task(fchg, ThreadPool::priority_t::CRITICAL, std::ref(x), std::ref(y));
+		auto future_mul = tp.prepare_task(fmul, ThreadPool::priority_t::HIGH, x, y);
+		auto future_div = tp.prepare_task(fdiv, ThreadPool::priority_t::MEDIUM, x, y);
+		auto future_sub = tp.prepare_task(fsub, ThreadPool::priority_t::LOW, x, y);
+		auto future_sum = tp.prepare_task(fsum, ThreadPool::priority_t::MINOR, x, y);
 
 		if (future_mul.has_value()
 			|| future_div.has_value()
