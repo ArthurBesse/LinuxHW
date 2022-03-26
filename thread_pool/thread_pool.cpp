@@ -12,9 +12,6 @@
 #include <condition_variable>
 #include <logger.h>
 
-/*
- * There are some issues with reference parameters. If you want to review this code please wait while I fix these issues.
- */
 
 class ThreadPool final
 {
@@ -41,60 +38,10 @@ public:
 	ThreadPool& operator=(ThreadPool&&) = delete;
 	ThreadPool& operator=(ThreadPool const&) = delete;
 
-	template<class T, class ...Args>
-	std::optional<std::future<typename std::function<T(Args...)>::result_type>> 
-		prepare_task(std::function<T(Args...)> task, priority_t priority, Args const&... args)
-	{
-		if constexpr (false == std::is_void<T>::value)
-		{
-			using RetType = typename decltype(task)::result_type;
-			auto promise = std::make_shared<std::promise<RetType> >();
-			std::future<RetType> future = promise->get_future();
 
-			this->prepare_task_internal
-			(
-				[task, promise, &args...]()
-				{
-					try
-					{
-						promise->set_value(task(args...));
-					}
-					catch (std::exception const& e)
-					{
-						try{ promise->set_exception(std::current_exception()); }	
-						catch (...) 
-						{
-							Logger::logf(Logger::ERROR, __FILE__, __LINE__, "%s", e.what());
-						}
-					}
-
-				}, priority
-			);
-			return future;
-		}
-		else
-		{
-			this->prepare_task_internal
-			(
-				[task, &args...]()
-				{
-					try
-					{
-						task(args...);
-					}
-					catch (const std::exception& e)
-					{
-						Logger::logf(Logger::ERROR, __FILE__, __LINE__, "%s", e.what());
-					}
-				}, priority
-			);
-			return std::nullopt;
-		}
-	}
-
-        template<class T, class ...Args>
-        std::optional<std::future<typename std::function<T(Args...)>::result_type>>
-                prepare_task(std::function<T(Args...)> task, priority_t priority, Args &&... args)
+        template<class T, class ...FuncArgs, class ...Args>
+        std::optional<std::future<typename std::function<T(FuncArgs...)>::result_type>>
+                prepare_task(std::function<T(FuncArgs...)> task, priority_t priority, Args &&... args)
         {
                 if constexpr (false == std::is_void<T>::value)
                 {
@@ -108,7 +55,7 @@ public:
                                 {
                                         try
                                         {
-                                                promise->set_value(task(args...));
+						promise->set_value(task(args...));
                                         }
                                         catch (std::exception const& e)
                                         {
@@ -285,7 +232,7 @@ int main(int argc, char** argv)
 		};
 
 		auto future_mul = tp.prepare_task(fmul, ThreadPool::priority_t::LOW, x, y);
-		auto future_div = tp.prepare_task(fdiv, ThreadPool::priority_t::MINOR, x, y);
+		auto future_div = tp.prepare_task(fdiv, ThreadPool::priority_t::MEDIUM, x, y);
 		auto future_sub = tp.prepare_task(fsub, ThreadPool::priority_t::HIGH, x, y);
 		auto future_sum = tp.prepare_task(fsum, ThreadPool::priority_t::CRITICAL, x, y);
 
@@ -314,6 +261,7 @@ int main(int argc, char** argv)
 	{
 
 		Logger::logf(Logger::INFO, __FILE__, __LINE__, "Tests without return type started");
+
 		std::function<void(std::reference_wrapper<int>, std::reference_wrapper<int>)> fchg = [](std::reference_wrapper<int> x, std::reference_wrapper<int> y) {
 			x.get() <<= 1;
 			y.get() <<= 1;
@@ -335,7 +283,7 @@ int main(int argc, char** argv)
 		auto future_mul = tp.prepare_task(fmul, ThreadPool::priority_t::HIGH, x, y);
 		auto future_div = tp.prepare_task(fdiv, ThreadPool::priority_t::MEDIUM, x, y);
 		auto future_sub = tp.prepare_task(fsub, ThreadPool::priority_t::LOW, x, y);
-		auto future_sum = tp.prepare_task(fsum, ThreadPool::priority_t::MINOR, x, y);
+		auto future_sum = tp.prepare_task(fsum, ThreadPool::priority_t::MINOR, std::move(x), std::move(y));
 
 		if (future_mul.has_value()
 			|| future_div.has_value()
