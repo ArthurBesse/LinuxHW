@@ -113,8 +113,8 @@ public:
 	{
 		try
 		{
-			if (true == this->m_stopped) return;		
-			this->m_stop_requested = true;
+			if (true == this->m_stopped) return;
+			this->m_stop_requested.store(true, std::memory_order_release);
 			m_cv.notify_all();
 			for (auto& thread : m_threads)
 				if(thread.joinable()) thread.join();
@@ -123,12 +123,12 @@ public:
 		catch (std::exception const& e)
                 {
                         Logger::logf(Logger::ERROR, __FILE__, __LINE__, "Error occured in ThreadPool::stop(): %s", e.what());
-                        this->stop();
+			std::terminate();
                 }
                 catch (...)
                 {
                         Logger::logf(Logger::ERROR, __FILE__, __LINE__, "Unexpected error occured in ThreadPool::stop()");
-                        this->stop();
+                        std::terminate();
                 }
 	}
 private:
@@ -145,10 +145,10 @@ private:
 						Task task;
 						{
 							std::unique_lock<std::mutex> ul(m_mutex);
-							m_cv.wait(ul, 
-								[this, &task] () 
-								{ 
-									if (m_stop_requested)
+							m_cv.wait(ul,
+								[this, &task] ()
+								{
+									if (true == m_stop_requested.load(std::memory_order_acquire))
 										return true;
 									if (m_queue.size())
 										return task = m_queue.top(), m_queue.pop(), true;
