@@ -1,9 +1,7 @@
 #include <thread>
 #include <iostream>
-#include <string>
 #include <future>
 #include <memory>
-#include <list>
 #include <optional>
 #include <queue>
 #include <chrono>
@@ -19,12 +17,12 @@ class ThreadPool final
 public:
 	enum class priority_t { MINOR, LOW, MEDIUM, HIGH, CRITICAL };
 
-	ThreadPool(std::size_t capacity)
+	explicit ThreadPool(std::size_t capacity)
 		: m_capacity(capacity)
 		, m_stopped(true)
 	{
 		if (capacity > std::thread::hardware_concurrency())
-			Logger::logf(Logger::WARNING, __FILE__, __LINE__, "Requested threads count is %d while reccomended count is %d. This may result in slow operation or unexpected termination of program.", 
+			Logger::logf(Logger::WARNING, __FILE__, __LINE__, "Requested threads count is %d while recommended count is %d. This may result in slow operation or unexpected termination of program.",
 				m_capacity, std::thread::hardware_concurrency());
 	}
 
@@ -99,12 +97,12 @@ public:
 		}
 		catch (std::exception const& e)
 		{
-			Logger::logf(Logger::ERROR, __FILE__, __LINE__, "Error occured in ThreadPool::start(): %s", e.what());
+			Logger::logf(Logger::ERROR, __FILE__, __LINE__, "Error occurred in ThreadPool::start(): %s", e.what());
 			this->stop();
 		}
 		catch (...)
 		{
-			Logger::logf(Logger::ERROR, __FILE__, __LINE__, "Unexpected error occured in ThreadPool::start()");
+			Logger::logf(Logger::ERROR, __FILE__, __LINE__, "Unexpected error occurred in ThreadPool::start()");
 			this->stop();
 		}
 	}
@@ -122,12 +120,12 @@ public:
 		}
 		catch (std::exception const& e)
                 {
-                        Logger::logf(Logger::ERROR, __FILE__, __LINE__, "Error occured in ThreadPool::stop(): %s", e.what());
+                        Logger::logf(Logger::ERROR, __FILE__, __LINE__, "Error occurred in ThreadPool::stop(): %s", e.what());
 			std::terminate();
                 }
                 catch (...)
                 {
-                        Logger::logf(Logger::ERROR, __FILE__, __LINE__, "Unexpected error occured in ThreadPool::stop()");
+                        Logger::logf(Logger::ERROR, __FILE__, __LINE__, "Unexpected error occurred in ThreadPool::stop()");
                         std::terminate();
                 }
 	}
@@ -150,7 +148,7 @@ private:
 								{
 									if (true == m_stop_requested.load(std::memory_order_acquire))
 										return true;
-									if (m_queue.size())
+									if (false == m_queue.empty())
 										return task = m_queue.top(), m_queue.pop(), true;
 									return false;
 								}
@@ -188,7 +186,7 @@ private:
 				m_task();
 		}
 		Task(std::function<void()> task, priority_t priority)
-			: m_task(task)
+			: m_task(std::move(task))
 			, m_priority(priority)
 		{
 
@@ -207,7 +205,7 @@ private:
 };
 
 
-int main(int argc, char** argv)
+int main(int, char**)
 {
 	Logger logger(nullptr, true, false);
 	using namespace std::chrono_literals;
@@ -245,12 +243,12 @@ int main(int argc, char** argv)
 		}
 		catch (std::exception const& e)
 		{
-			Logger::logf(Logger::ERROR, __FILE__, __LINE__, "Error occured when trying to access returned values: %s", e.what());
+			Logger::logf(Logger::ERROR, __FILE__, __LINE__, "Error occurred when trying to access returned values: %s", e.what());
 			return 1;
 		}
 		catch (...)
 		{
-			Logger::logf(Logger::ERROR, __FILE__, __LINE__, "Unexpected error occured when trying to access returned values");
+			Logger::logf(Logger::ERROR, __FILE__, __LINE__, "Unexpected error occurred when trying to access returned values");
 			return 1;
 		}
 	}
@@ -283,7 +281,7 @@ int main(int argc, char** argv)
 		auto future_mul = tp.prepare_task(fmul, ThreadPool::priority_t::HIGH, x, y);
 		auto future_div = tp.prepare_task(fdiv, ThreadPool::priority_t::MEDIUM, x, y);
 		auto future_sub = tp.prepare_task(fsub, ThreadPool::priority_t::LOW, x, y);
-		auto future_sum = tp.prepare_task(fsum, ThreadPool::priority_t::MINOR, std::move(x), std::move(y));
+		auto future_sum = tp.prepare_task(fsum, ThreadPool::priority_t::MINOR, x, y);
 
 		if (future_mul.has_value()
 			|| future_div.has_value()
